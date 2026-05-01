@@ -1,0 +1,37 @@
+# SearXNG — self-hosted meta-search aggregator.
+#
+# Provides Nova OS's `web` skill with snippet-level search results at zero
+# per-query cost. License: AGPL-3.0 — Nova OS communicates over the
+# documented HTTP API only and does not bundle SearXNG.
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/searxng/docker-compose.yaml up -d
+#
+# Then set in the root .env (and re-up Nova OS):
+#   SEARXNG_URL=http://searxng:8080
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: nova-searxng
+    restart: unless-stopped
+    ports:
+      - "${SEARXNG_PORT:-8888}:8080"
+    volumes:
+      - ./searxng-data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL:-http://localhost:8888/}
+      - UWSGI_WORKERS=4
+      - UWSGI_THREADS=4
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    external: true

@@ -1,0 +1,44 @@
+# Docling — high-quality document-to-Markdown conversion.
+# License: Apache-2.0.
+#
+# Strong on:
+#   - Scanned PDFs via built-in OCR (EasyOCR / Tesseract)
+#   - Complex layout PDFs (multi-column, tables, headers/footers)
+#   - DOCX → Markdown with table extraction
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/docling/docker-compose.yaml up -d
+#
+# Then set in the root .env (and re-up Nova OS):
+#   DOCLING_URL=http://docling:5001
+#
+# Nova OS will auto-select RoutingParser{PDF: Docling, DOCX: Docling, HTML: Native}
+# when DOCLING_URL is set. Force Docling for everything via NOVA_OS_PARSER=docling.
+#
+# GPU acceleration: uncomment the `deploy` block below and ensure the NVIDIA
+# container runtime is installed on the host. Without GPU, OCR runs on CPU.
+
+services:
+  docling:
+    image: ghcr.io/docling-project/docling-serve:latest
+    container_name: nova-docling
+    restart: unless-stopped
+    ports:
+      - "${DOCLING_PORT:-5001}:5001"
+    environment:
+      # Number of parallel worker processes inside the container.
+      # Increase on hosts with many cores (4–8 for 8-core servers).
+      - DOCLING_WORKERS=${DOCLING_WORKERS:-2}
+    networks:
+      - nova-net
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+networks:
+  nova-net:
+    external: true

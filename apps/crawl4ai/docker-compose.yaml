@@ -1,0 +1,26 @@
+# crawl4ai — page fetcher with strong handling of JS-heavy SPAs.
+#
+# License: Apache-2.0.
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/crawl4ai/docker-compose.yaml up -d
+#
+# Then set in the root .env (and re-up Nova OS):
+#   CRAWL4AI_URL=http://crawl4ai:11235
+
+services:
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: nova-crawl4ai
+    restart: unless-stopped
+    ports:
+      - "${CRAWL4AI_PORT:-11235}:11235"
+    shm_size: "1gb"
+    environment:
+      - INSTALL_TYPE=basic
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    external: true

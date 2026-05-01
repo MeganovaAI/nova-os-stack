@@ -1,0 +1,33 @@
+# FlashRank — cross-encoder reranker sidecar.
+# License: MIT. CPU-only; ~22 MB model (ms-marco-MiniLM-L-12-v2 by default).
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/flashrank/docker-compose.yaml up -d
+#
+# Then set in the root .env (and re-up Nova OS):
+#   FLASHRANK_URL=http://flashrank:8000
+#
+# Override the model with MODEL_NAME (e.g. ms-marco-TinyBERT-L-2-v2 — faster,
+# slightly lower quality).
+
+services:
+  flashrank:
+    build: ./flashrank
+    container_name: nova-flashrank
+    restart: unless-stopped
+    ports:
+      - "${FLASHRANK_PORT:-8002}:8000"
+    environment:
+      MODEL_NAME: ${FLASHRANK_MODEL:-ms-marco-MiniLM-L-12-v2}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    external: true

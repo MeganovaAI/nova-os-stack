@@ -1,0 +1,23 @@
+# Hermes — NousResearch agent gateway bridge.
+# License: Apache-2.0.
+#
+# Provides Nova OS with a bridge into the Hermes agent ecosystem. Persistent
+# state is kept in ./hermes-data on the host.
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/hermes/docker-compose.yaml up -d
+
+services:
+  nova-hermes:
+    image: nousresearch/hermes-agent:latest
+    container_name: nova-hermes
+    restart: unless-stopped
+    volumes:
+      - ./hermes-data:/opt/data
+    command: gateway run
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    external: true

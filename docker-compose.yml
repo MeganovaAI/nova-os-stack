@@ -1,0 +1,84 @@
+# Nova OS Stack — root compose file (core services only).
+#
+# Brings up Nova OS server + Postgres + SurrealDB. Companion apps under
+# apps/<name>/ are independent compose files; layer one on top with:
+#
+#   docker compose -f docker-compose.yml -f apps/<name>/docker-compose.yaml up -d
+#
+# All services share the `nova-net` network. Companion compose files attach
+# to it as `external: true` so service-to-service DNS works
+# (e.g. LibreChat reaching `nova-os:8900`).
+
+services:
+  nova-os:
+    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-latest}
+    container_name: nova-os
+    restart: unless-stopped
+    ports:
+      - "${NOVA_OS_PORT:-8900}:8900"
+    environment:
+      - NOVA_OS_PORT=8900
+      - "NOVA_OS_PUBLIC_URL=${NOVA_OS_PUBLIC_URL:?required - public URL Nova OS is reachable at, e.g. https://nova-os.example.com}"
+      - "NOVA_OS_ADMIN_EMAIL=${NOVA_OS_ADMIN_EMAIL:?required - initial admin email}"
+      - "NOVA_OS_ADMIN_PASSWORD=${NOVA_OS_ADMIN_PASSWORD:?required - initial admin password}"
+      - "NOVA_OS_DATABASE_URL=postgresql://nova:${POSTGRES_PASSWORD:?required - generate with openssl rand -hex 32}@postgres:5432/nova_os"
+      - NOVA_OS_SURREAL_URL=ws://surrealdb:8000/rpc
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - MEGANOVA_API_KEY=${MEGANOVA_API_KEY:-}
+      - MEGANOVA_BASE_URL=${MEGANOVA_BASE_URL:-}
+      # Optional companion-app wiring — uncomment in .env to activate.
+      - SEARXNG_URL=${SEARXNG_URL:-}
+      - CRAWL4AI_URL=${CRAWL4AI_URL:-}
+      - FIRECRAWL_URL=${FIRECRAWL_URL:-}
+      - DOCLING_URL=${DOCLING_URL:-}
+      - FLASHRANK_URL=${FLASHRANK_URL:-}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    volumes:
+      - nova-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      surrealdb:
+        condition: service_started
+    networks:
+      - nova-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nova-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nova_os
+      POSTGRES_USER: nova
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required - generate with openssl rand -hex 32}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova -d nova_os"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - nova-net
+
+  surrealdb:
+    image: surrealdb/surrealdb:v3
+    container_name: nova-surrealdb
+    restart: unless-stopped
+    command: start --user root --pass ${SURREAL_PASSWORD:-root} file:/data/database.db
+    volumes:
+      - surreal-data:/data
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    name: nova-net
+    driver: bridge
+
+volumes:
+  nova-data:
+  pg-data:
+  surreal-data:

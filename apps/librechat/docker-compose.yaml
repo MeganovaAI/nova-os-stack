@@ -1,0 +1,87 @@
+# LibreChat — chat UI for Nova OS.
+#
+# Wires LibreChat to Nova OS via:
+#   - the OpenAI-compatible /v1/chat/completions endpoint (baseURL in
+#     librechat.yaml points at http://nova-os:8900/v1)
+#   - Nova OS's built-in OIDC provider (issuer = NOVA_OS_PUBLIC_URL)
+#
+# Layer on top of the root compose:
+#   docker compose -f docker-compose.yml -f apps/librechat/docker-compose.yaml up -d
+#
+# Required secrets — set in apps/librechat/.env (see .env.example):
+#   NOVA_OS_API_KEY, JWT_SECRET, JWT_REFRESH_SECRET,
+#   NOVA_OS_OIDC_CLIENT_SECRET, OPENID_SESSION_SECRET
+
+services:
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    container_name: nova-librechat
+    restart: unless-stopped
+    ports:
+      - "${LIBRECHAT_PORT:-3080}:3080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - librechat-mongo
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3080
+      - MONGO_URI=mongodb://librechat-mongo:27017/LibreChat
+      # ENDPOINTS=custom allowlists only the custom endpoint and removes the
+      # agents route — prevents old saved conversations from hitting
+      # LibreChat's agents controller which errors with "agent_id required".
+      - ENDPOINTS=custom
+      - "NOVA_OS_API_KEY=${NOVA_OS_API_KEY:?required - issue one via the Nova OS dashboard, Settings → API Keys}"
+      # Branding
+      - APP_TITLE=${APP_TITLE:-Nova OS Chat}
+      - CUSTOM_FOOTER=Powered by Nova OS
+      # Auth
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-true}
+      - ALLOW_SOCIAL_LOGIN=true
+      - "JWT_SECRET=${JWT_SECRET:?required - generate with openssl rand -hex 32}"
+      - "JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?required - generate with openssl rand -hex 32}"
+      # SSO — Nova OS OIDC provider.
+      # Issuer URL must match what Nova OS publishes in its discovery document.
+      # NOVA_OS_PUBLIC_URL comes from the root .env. Override with
+      # NOVA_OS_OIDC_ISSUER for unusual topologies (container-internal vs
+      # public-facing URLs).
+      - OPENID_ISSUER=${NOVA_OS_OIDC_ISSUER:-${NOVA_OS_PUBLIC_URL:-http://nova-os:8900}}
+      - OPENID_CLIENT_ID=librechat
+      - "OPENID_CLIENT_SECRET=${NOVA_OS_OIDC_CLIENT_SECRET:?required - register a client in Nova OS Settings → OIDC and paste its secret here}"
+      - OPENID_SCOPE=openid profile email
+      - "OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:?required - generate with openssl rand -hex 32}"
+      - OPENID_CALLBACK_URL=/oauth/openid/callback
+      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - DOMAIN_SERVER=${LIBRECHAT_PUBLIC_URL:-http://localhost:3080}
+      - DOMAIN_CLIENT=${LIBRECHAT_PUBLIC_URL:-http://localhost:3080}
+      # Required when Nova OS terminates TLS with a self-signed or internal
+      # CA cert. Set to 1 in production once you have a real cert in front
+      # of Nova OS.
+      - NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+      # Concurrency — default of 2 in upstream LibreChat 429s when a retry
+      # arrives while a long deep-research call is still in flight.
+      - CONCURRENT_MESSAGE_MAX=${CONCURRENT_MESSAGE_MAX:-5}
+    volumes:
+      - ./librechat.yaml:/app/librechat.yaml:ro
+      - librechat-images:/app/client/public/images
+      - librechat-logs:/app/api/logs
+    networks:
+      - nova-net
+
+  librechat-mongo:
+    image: mongo:7
+    container_name: nova-librechat-db
+    restart: unless-stopped
+    volumes:
+      - librechat-mongo:/data/db
+    networks:
+      - nova-net
+
+networks:
+  nova-net:
+    external: true
+
+volumes:
+  librechat-images:
+  librechat-logs:
+  librechat-mongo:
