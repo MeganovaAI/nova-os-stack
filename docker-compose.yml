@@ -11,7 +11,7 @@
 
 services:
   nova-os:
-    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-latest}
+    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.7}
     container_name: nova-os
     restart: unless-stopped
     ports:
@@ -20,14 +20,19 @@ services:
       - NOVA_OS_PORT=8900
       - "NOVA_OS_PUBLIC_URL=${NOVA_OS_PUBLIC_URL:?required - public URL Nova OS is reachable at, e.g. https://nova-os.example.com}"
       - "NOVA_OS_ADMIN_EMAIL=${NOVA_OS_ADMIN_EMAIL:?required - initial admin email}"
-      - "NOVA_OS_ADMIN_PASSWORD=${NOVA_OS_ADMIN_PASSWORD:?required - initial admin password}"
+      - "NOVA_OS_ADMIN_PASSWORD=${NOVA_OS_ADMIN_PASSWORD:?required - initial admin password, >= 12 chars}"
+      - "NOVA_OS_JWT_SECRET=${NOVA_OS_JWT_SECRET:?required - generate with openssl rand -hex 32}"
       - "NOVA_OS_DATABASE_URL=postgresql://nova:${POSTGRES_PASSWORD:?required - generate with openssl rand -hex 32}@postgres:5432/nova_os"
       - NOVA_OS_SURREAL_URL=ws://surrealdb:8000/rpc
+      - NOVA_OS_APPS_ROOT=${NOVA_OS_APPS_ROOT:-/var/nova-os/apps}
+      - NOVA_OS_INTEGRATION_KEY=${NOVA_OS_INTEGRATION_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - MEGANOVA_API_KEY=${MEGANOVA_API_KEY:-}
-      - MEGANOVA_BASE_URL=${MEGANOVA_BASE_URL:-}
+      - MEGANOVA_CLOUD_KEY=${MEGANOVA_CLOUD_KEY:-${MEGANOVA_API_KEY:-}}
+      - MEGANOVA_CLOUD_URL=${MEGANOVA_CLOUD_URL:-${MEGANOVA_BASE_URL:-}}
       # Optional companion-app wiring — uncomment in .env to activate.
       - SEARXNG_URL=${SEARXNG_URL:-}
       - CRAWL4AI_URL=${CRAWL4AI_URL:-}
@@ -37,6 +42,12 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
       - nova-data:/data
+      # Multi-app primitive (v0.1.7+): mount a persistent volume at the
+      # apps root so installed apps survive container restarts. Without
+      # this mount, anything installed via `nova-os apps install` or
+      # /admin/apps.html lands in ephemeral container storage and is
+      # wiped on every `docker compose down/up`.
+      - nova-apps:/var/nova-os/apps
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,5 +91,6 @@ networks:
 
 volumes:
   nova-data:
+  nova-apps:
   pg-data:
   surreal-data:
