@@ -116,6 +116,7 @@ Each tag of this repo pins a known-working set of (Nova OS, companion-app) image
 - [docs/networking.md](docs/networking.md) — how the containers reach each other
 - [docs/oidc-setup.md](docs/oidc-setup.md) — how to register companion apps as OIDC clients
 - [docs/upgrade.md](docs/upgrade.md) — upgrading between Nova OS versions
+- [docs/ag-ui.md](docs/ag-ui.md) — wiring CopilotKit or any AG-UI client to Nova OS
 
 ## License
 
