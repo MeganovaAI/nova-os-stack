@@ -5,7 +5,7 @@ Reference deployment manifests for [Nova OS](https://github.com/MeganovaAI/nova-
 This repo contains:
 
 - A root `docker-compose.yml` that brings up **Nova OS core** (server + Postgres + SurrealDB) from the public Docker image at `ghcr.io/meganovaai/nova-os`.
-- An `apps/` directory with optional companion stacks: LibreChat (chat UI), SearXNG (meta-search), crawl4ai / Firecrawl (page fetchers), Docling (document parser), FlashRank (reranker), Phoenix (LLM observability), Hermes (agent gateway).
+- An `apps/` directory with optional companion stacks: LibreChat (chat UI), SearXNG (meta-search), crawl4ai (page fetcher), Docling (document parser).
 - `docs/` with cross-cutting setup notes (networking, OIDC, upgrades).
 
 You don't need any of the apps under `apps/` to run Nova OS. Pull only what you need.
@@ -91,17 +91,13 @@ docker compose -f docker-compose.yml -f apps/librechat/docker-compose.yaml up -d
 | [`apps/librechat`](apps/librechat) | Chat UI (LibreChat) wired to Nova OS via OIDC + custom endpoint | 3080 | MIT |
 | [`apps/searxng`](apps/searxng) | Self-hosted meta-search aggregator (zero API cost) | 8888 | AGPL-3.0 |
 | [`apps/crawl4ai`](apps/crawl4ai) | JS-friendly page fetcher | 11235 | Apache-2.0 |
-| [`apps/firecrawl`](apps/firecrawl) | PDF-friendly fetch + extract (5-container stack) | 3022 | AGPL-3.0 |
 | [`apps/docling`](apps/docling) | Document-to-Markdown parser (PDF OCR + DOCX) | 5001 | Apache-2.0 |
-| [`apps/flashrank`](apps/flashrank) | Cross-encoder reranker for retrieval | 8002 | MIT |
-| [`apps/phoenix`](apps/phoenix) | OTLP trace receiver + UI for LLM observability | 6006 / 4317 | ELv2 |
-| [`apps/hermes`](apps/hermes) | NousResearch Hermes agent gateway bridge | – | Apache-2.0 |
 
 > **Apps under `apps/`** are companion *services* (separate containers wired to Nova OS over HTTP). They're distinct from **Nova OS apps** described in the previous section — those are partner-authored agent + migration bundles that load into the Nova OS process itself. Both exist; they're different scoping primitives.
 
 ### Licensing note
 
-SearXNG and Firecrawl OSS are AGPL-3.0. Nova OS communicates with them over their public HTTP APIs only — it does not bundle or link against them. Customers who prefer to avoid AGPL components entirely can swap in alternatives via the documented `Fetcher` interface.
+SearXNG is AGPL-3.0. Nova OS communicates with it over its public HTTP API only — it does not bundle or link against it. Customers who prefer to avoid AGPL components entirely can swap in an alternative search backend (Tavily, Brave, Exa, MegaNova gateway) via the documented `Searcher` interface.
 
 ## Versioning
 

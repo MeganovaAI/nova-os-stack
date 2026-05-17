@@ -36,10 +36,7 @@ services:
       # Optional companion-app wiring — uncomment in .env to activate.
       - SEARXNG_URL=${SEARXNG_URL:-}
       - CRAWL4AI_URL=${CRAWL4AI_URL:-}
-      - FIRECRAWL_URL=${FIRECRAWL_URL:-}
       - DOCLING_URL=${DOCLING_URL:-}
-      - FLASHRANK_URL=${FLASHRANK_URL:-}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
       - nova-data:/data
       # Multi-app primitive (v0.1.7+): mount a persistent volume at the

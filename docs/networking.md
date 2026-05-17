@@ -13,10 +13,7 @@ Every companion app under `apps/` declares the same network as `external: true`.
    - `http://nova-os:8900` — Nova OS API
    - `http://searxng:8080` — SearXNG (when running)
    - `http://crawl4ai:11235` — crawl4ai
-   - `http://firecrawl-api:3002` — Firecrawl API
    - `http://docling:5001` — Docling
-   - `http://flashrank:8000` — FlashRank
-   - `phoenix:4317` — Phoenix OTLP gRPC
 
 ## Host port map (defaults)
 
@@ -26,14 +23,9 @@ Every companion app under `apps/` declares the same network as `external: true`.
 | LibreChat | 3080 | 3080 | `LIBRECHAT_PORT` |
 | SearXNG | 8080 | 8888 | `SEARXNG_PORT` |
 | crawl4ai | 11235 | 11235 | `CRAWL4AI_PORT` |
-| Firecrawl API | 3002 | 3022 | `FIRECRAWL_PORT` |
 | Docling | 5001 | 5001 | `DOCLING_PORT` |
-| FlashRank | 8000 | 8002 | `FLASHRANK_PORT` |
-| Phoenix UI | 6006 | 6006 | `PHOENIX_UI_PORT` |
-| Phoenix OTLP gRPC | 4317 | 4317 | `PHOENIX_GRPC_PORT` |
-| Phoenix OTLP HTTP | 4318 | 4318 | `PHOENIX_HTTP_PORT` |
 
-Postgres, SurrealDB, MongoDB (LibreChat), Redis / RabbitMQ / Postgres (Firecrawl) are **not** published to the host. They stay on `nova-net`.
+Postgres, SurrealDB, MongoDB (LibreChat) are **not** published to the host. They stay on `nova-net`.
 
 ## Reverse-proxy in front of Nova OS
 
