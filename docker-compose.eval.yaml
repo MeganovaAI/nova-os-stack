@@ -1,0 +1,69 @@
+# docker-compose.eval.yaml — two-instance evaluation template
+# Brings up a SECOND nova-os service (`nova-os-eval`) alongside production
+# for CI / synthetic-customer evaluation workloads. Production billing,
+# audit, persist_fields, knowledge collections, and per-user storage are
+# naturally segregated because the eval instance uses its own PG database,
+# gateway key, and data volume.
+#
+# Usage:
+#   cp .env.eval.example .env.eval
+#   # edit .env.eval — fill in real values
+#   docker compose -f docker-compose.eval.yaml --env-file .env.eval up -d
+#   curl http://localhost:8901/health
+#
+# The eval instance runs on host port 8901 to avoid collision with the
+# production instance on 8900. Stop + wipe (CI teardown) with:
+#   docker compose -f docker-compose.eval.yaml --env-file .env.eval down -v
+
+services:
+  nova-os-eval:
+    image: ghcr.io/meganovaai/nova-os:v0.1.7
+    container_name: nova-os-eval
+    ports:
+      - "8901:8900"     # eval on host port 8901; production stays on 8900
+    environment:
+      NOVA_OS_DATABASE_URL: "postgresql://novaos:${EVAL_PG_PASSWORD}@postgres-eval:5432/nova_eval"
+      NOVA_OS_JWT_SECRET: "${EVAL_JWT_SECRET}"
+      NOVA_OS_ADMIN_EMAIL: "${EVAL_ADMIN_EMAIL}"
+      NOVA_OS_ADMIN_PASSWORD: "${EVAL_ADMIN_PASSWORD}"
+      OPENAI_API_KEY: "${EVAL_OPENAI_API_KEY}"
+      OPENAI_API_BASE: "${OPENAI_API_BASE:-https://api.meganova.ai}"
+      OPENAI_MODEL: "${EVAL_OPENAI_MODEL:-anthropic/claude-haiku-4-5}"
+      NOVA_OS_BRAIN_MODEL: "${EVAL_NOVA_OS_BRAIN_MODEL:-gemini/gemini-2.5-flash}"
+      NOVA_OS_SKILL_MODEL: "${EVAL_NOVA_OS_SKILL_MODEL:-gemini/gemini-2.5-flash}"
+    volumes:
+      - eval-data:/data/nova-os
+      - eval-users:/data/users
+    # Raise memlock cap — Go's netpoll uses EPOLLET, which is memcg-accounted
+    # against RLIMIT_MEMLOCK on Linux. Without this, the nova-os startup
+    # guard refuses to boot in containers running on hosts where the
+    # default 64 KiB cap applies. Equivalent to `docker run --ulimit memlock=-1`.
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    depends_on:
+      postgres-eval:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-eval:
+    image: postgres:16-alpine
+    container_name: postgres-eval
+    environment:
+      POSTGRES_USER: novaos
+      POSTGRES_PASSWORD: "${EVAL_PG_PASSWORD}"
+      POSTGRES_DB: nova_eval
+    volumes:
+      - eval-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novaos -d nova_eval"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  eval-data:
+  eval-users:
+  eval-postgres-data:
