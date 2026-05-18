@@ -16,6 +16,13 @@ services:
     restart: unless-stopped
     ports:
       - "${NOVA_OS_PORT:-8900}:8900"
+    # Linux memcg accounts EPOLLET items against RLIMIT_MEMLOCK (default 64 KiB)
+    # and Go's netpoll uses EPOLLET for every fd. Vanilla Docker hosts without
+    # systemd `LimitMEMLOCK=infinity` tuning will fail to start nova-os without
+    # this ulimit override. Eval template (docker-compose.eval.yaml) has the
+    # same line for the same reason.
+    ulimits:
+      memlock: -1
     environment:
       - NOVA_OS_PORT=8900
       - "NOVA_OS_PUBLIC_URL=${NOVA_OS_PUBLIC_URL:?required - public URL Nova OS is reachable at, e.g. https://nova-os.example.com}"
