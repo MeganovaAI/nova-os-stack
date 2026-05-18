@@ -99,6 +99,46 @@ docker compose -f docker-compose.yml -f apps/librechat/docker-compose.yaml up -d
 
 SearXNG is AGPL-3.0. Nova OS communicates with it over its public HTTP API only — it does not bundle or link against it. Customers who prefer to avoid AGPL components entirely can swap in an alternative search backend (Tavily, Brave, Exa, MegaNova gateway) via the documented `Searcher` interface.
 
+## Two-instance evaluation pattern
+
+For partners running synthetic-customer evaluation or CI workloads, keep
+evaluation traffic separate from production by bringing up a second
+`nova-os` service alongside production. The eval instance uses its own
+PG database, gateway key, knowledge collections, and data volume —
+production billing, audit logs, and persist_fields slot state stay
+clean.
+
+### Quickstart
+
+```bash
+cp .env.eval.example .env.eval
+# edit .env.eval — set EVAL_PG_PASSWORD, EVAL_JWT_SECRET, EVAL_ADMIN_PASSWORD,
+# EVAL_OPENAI_API_KEY (recommend a low-limit prepaid key for safety)
+
+docker compose -f docker-compose.eval.yaml --env-file .env.eval up -d
+curl http://localhost:8901/health    # eval instance health
+```
+
+### What naturally segregates
+
+- **Call log** — eval writes to `nova_eval` DB; production writes to its own DB. Production dashboards stay clean.
+- **Gateway cost** — separate `OPENAI_API_KEY` per instance. Low-limit prepaid key means a runaway simulate loop can't bankrupt production.
+- **Knowledge collections** — eval starts with empty collections; production retains its full set.
+- **Per-user storage** — eval uses its own `data/users/` volume; production isn't touched.
+- **Audit + firewall events** — separate database tables.
+
+### CI usage
+
+```bash
+# Per-CI-job — fresh eval instance, run tests, tear down
+docker compose -f docker-compose.eval.yaml --env-file .env.eval up -d
+sleep 5   # let eval instance migrate + start
+pytest tests/simulator/   # uses nova-os-sdk client.simulate()
+docker compose -f docker-compose.eval.yaml --env-file .env.eval down -v
+```
+
+No kernel flag, no special configuration on the production instance — eval is just a separate `nova-os` process.
+
 ## Versioning
 
 Each tag of this repo pins a known-working set of (Nova OS, companion-app) image versions. The default in `.env.example` and `docker-compose.yml` tracks the most recent tested Nova OS release.
