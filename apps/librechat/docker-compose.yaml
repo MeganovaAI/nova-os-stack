@@ -14,7 +14,7 @@
 
 services:
   librechat:
-    image: ghcr.io/danny-avila/librechat:latest
+    image: ghcr.io/meganovaai/librechat:nova-os
     container_name: nova-librechat
     restart: unless-stopped
     ports:

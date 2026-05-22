@@ -31,7 +31,7 @@ endpoints:
       # this stack — LibreChat's yaml parser only supports plain ${VAR},
       # not ${VAR:-default}, so the value is hardcoded here.
       baseURL: "http://nova-os:8900/v1"
-      iconURL: "https://docs.meganova.ai/assets/nova_os_icon_256.svg"
+      iconURL: "/assets/nova_os_icon.png"
       chatGptLabel: "Nova Agent"
       modelDisplayLabel: "Nova Agent"
       titleModel: "nova-orchestrator"
