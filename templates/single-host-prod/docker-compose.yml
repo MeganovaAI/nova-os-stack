@@ -1,0 +1,139 @@
+# Single-Host Prod Template — Nova OS + LibreChat behind nginx TLS proxy.
+#
+# nginx terminates TLS on :443, fans out to nova-os (8900) and
+# librechat (3080) over the internal docker network. Internal
+# traffic is HTTP; only :80/:443 are exposed publicly.
+#
+# Bring up:
+#   docker compose up -d
+# Verify:
+#   ./verify.sh
+
+name: nova-os-prod
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nova-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - nova-os
+      - librechat
+    networks:
+      - nova-net
+
+  nova-os:
+    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.8}
+    container_name: nova-os
+    restart: unless-stopped
+    # NOT exposed publicly — nginx routes to it internally.
+    expose:
+      - "8900"
+    ulimits:
+      memlock: -1
+    environment:
+      - NOVA_OS_PORT=8900
+      - "NOVA_OS_PUBLIC_URL=${NOVA_OS_PUBLIC_URL:?required - set to https://your-hostname.example.com in .env}"
+      - "NOVA_OS_ADMIN_EMAIL=${NOVA_OS_ADMIN_EMAIL:?required - initial admin email}"
+      - "NOVA_OS_ADMIN_PASSWORD=${NOVA_OS_ADMIN_PASSWORD:?required - initial admin password, >=12 chars}"
+      - "NOVA_OS_JWT_SECRET=${NOVA_OS_JWT_SECRET:?required - generate with openssl rand -base64 48}"
+      - "NOVA_OS_DATABASE_URL=postgresql://nova:${POSTGRES_PASSWORD:?required - generate with openssl rand -hex 32}@postgres:5432/nova_os"
+      - NOVA_OS_SURREAL_URL=ws://surrealdb:8000/rpc
+      - NOVA_OS_LIBRECHAT_URL=${NOVA_OS_PUBLIC_URL}/chat
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.meganova.ai}
+      - "OPENAI_API_KEY=${OPENAI_API_KEY:?required - LLM provider API key}"
+      - OPENAI_MODEL=${OPENAI_MODEL:-gemini/gemini-3.5-flash}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+    volumes:
+      - nova-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      surrealdb:
+        condition: service_started
+    networks:
+      - nova-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nova-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=nova
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?required}"
+      - POSTGRES_DB=nova_os
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova -d nova_os"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - nova-net
+
+  surrealdb:
+    image: surrealdb/surrealdb:v2.0.0
+    container_name: nova-surrealdb
+    restart: unless-stopped
+    command: start --user root --pass root --bind 0.0.0.0:8000 file:/data/surreal.db
+    volumes:
+      - surreal-data:/data
+    networks:
+      - nova-net
+
+  librechat:
+    image: ghcr.io/meganovaai/librechat:${LIBRECHAT_VERSION:-nova-os}
+    container_name: nova-librechat
+    restart: unless-stopped
+    expose:
+      - "3080"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3080
+      - MONGO_URI=mongodb://librechat-db:27017/LibreChat
+      - ENDPOINTS=custom
+      - APP_TITLE=${APP_TITLE:-Nova OS}
+      # nova-os#521: LibreChat auto-discovers OIDC issuer at boot. Single
+      # source of truth — nova-os's /.well-known/openid-configuration.
+      - NOVA_OS_HOST=http://nova-os:8900
+      - NOVA_OS_OIDC_AUTODISCOVER=1
+      - "OPENID_CLIENT_SECRET=${NOVA_OS_OIDC_CLIENT_SECRET:?required - openssl rand -hex 32}"
+      - OPENID_CLIENT_ID=librechat
+      - OPENID_SCOPE=openid profile email
+      - "OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:?required - openssl rand -base64 48}"
+      - OPENID_CALLBACK_URL=/oauth/openid/callback
+      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - DOMAIN_SERVER=${NOVA_OS_PUBLIC_URL}/chat
+      - DOMAIN_CLIENT=${NOVA_OS_PUBLIC_URL}/chat
+    depends_on:
+      - nova-os
+      - librechat-db
+    networks:
+      - nova-net
+
+  librechat-db:
+    image: mongo:7
+    container_name: nova-librechat-db
+    restart: unless-stopped
+    volumes:
+      - librechat-mongo:/data/db
+    networks:
+      - nova-net
+
+volumes:
+  nova-data:
+  postgres-data:
+  surreal-data:
+  librechat-mongo:
+
+networks:
+  nova-net:
+    driver: bridge

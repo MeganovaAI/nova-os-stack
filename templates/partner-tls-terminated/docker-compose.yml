@@ -1,0 +1,117 @@
+# Partner TLS-Terminated Template — Nova OS + LibreChat, HTTP-only
+# behind the partner's existing reverse proxy (Cloudflare, ALB, Caddy, ...).
+#
+# Bring up:
+#   docker compose up -d
+# Verify (local probes — true end-to-end test requires partner-side):
+#   ./verify.sh
+
+name: nova-os-partner
+
+services:
+  nova-os:
+    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.8}
+    container_name: nova-os
+    restart: unless-stopped
+    ports:
+      - "${NOVA_OS_BIND:-0.0.0.0}:${NOVA_OS_INTERNAL_PORT:-8900}:8900"
+    ulimits:
+      memlock: -1
+    environment:
+      - NOVA_OS_PORT=8900
+      - "NOVA_OS_PUBLIC_URL=${NOVA_OS_PUBLIC_URL:?required - the partner's public HTTPS URL, e.g. https://nova.partner.com}"
+      - "NOVA_OS_ADMIN_EMAIL=${NOVA_OS_ADMIN_EMAIL:?required}"
+      - "NOVA_OS_ADMIN_PASSWORD=${NOVA_OS_ADMIN_PASSWORD:?required - >=12 chars}"
+      - "NOVA_OS_JWT_SECRET=${NOVA_OS_JWT_SECRET:?required - openssl rand -base64 48}"
+      - "NOVA_OS_DATABASE_URL=postgresql://nova:${POSTGRES_PASSWORD:?required}@postgres:5432/nova_os"
+      - NOVA_OS_SURREAL_URL=ws://surrealdb:8000/rpc
+      - NOVA_OS_LIBRECHAT_URL=${NOVA_OS_PUBLIC_URL}/chat
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.meganova.ai}
+      - "OPENAI_API_KEY=${OPENAI_API_KEY:?required}"
+      - OPENAI_MODEL=${OPENAI_MODEL:-gemini/gemini-3.5-flash}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+    volumes:
+      - nova-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      surrealdb:
+        condition: service_started
+    networks:
+      - nova-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nova-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=nova
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?required}"
+      - POSTGRES_DB=nova_os
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova -d nova_os"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - nova-net
+
+  surrealdb:
+    image: surrealdb/surrealdb:v2.0.0
+    container_name: nova-surrealdb
+    restart: unless-stopped
+    command: start --user root --pass root --bind 0.0.0.0:8000 file:/data/surreal.db
+    volumes:
+      - surreal-data:/data
+    networks:
+      - nova-net
+
+  librechat:
+    image: ghcr.io/meganovaai/librechat:${LIBRECHAT_VERSION:-nova-os}
+    container_name: nova-librechat
+    restart: unless-stopped
+    ports:
+      - "${NOVA_OS_BIND:-0.0.0.0}:${LIBRECHAT_INTERNAL_PORT:-3080}:3080"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3080
+      - MONGO_URI=mongodb://librechat-db:27017/LibreChat
+      - ENDPOINTS=custom
+      - APP_TITLE=${APP_TITLE:-Nova OS}
+      - NOVA_OS_HOST=http://nova-os:8900
+      - NOVA_OS_OIDC_AUTODISCOVER=1
+      - "OPENID_CLIENT_SECRET=${NOVA_OS_OIDC_CLIENT_SECRET:?required - openssl rand -hex 32}"
+      - OPENID_CLIENT_ID=librechat
+      - OPENID_SCOPE=openid profile email
+      - "OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:?required - openssl rand -base64 48}"
+      - OPENID_CALLBACK_URL=/oauth/openid/callback
+      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - DOMAIN_SERVER=${NOVA_OS_PUBLIC_URL}/chat
+      - DOMAIN_CLIENT=${NOVA_OS_PUBLIC_URL}/chat
+    depends_on:
+      - nova-os
+      - librechat-db
+    networks:
+      - nova-net
+
+  librechat-db:
+    image: mongo:7
+    container_name: nova-librechat-db
+    restart: unless-stopped
+    volumes:
+      - librechat-mongo:/data/db
+    networks:
+      - nova-net
+
+volumes:
+  nova-data:
+  postgres-data:
+  surreal-data:
+  librechat-mongo:
+
+networks:
+  nova-net:
+    driver: bridge
