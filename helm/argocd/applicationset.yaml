@@ -1,0 +1,45 @@
+# ArgoCD ApplicationSet — one Nova OS Application per file in helm/tenants/.
+#
+# This is the "onboarding a tenant = one values file" payoff: drop
+# helm/tenants/<tenant>.yaml, and Argo renders the nova-os chart with that file
+# and serves it at <tenant>.<domain>. Deleting the file removes the tenant.
+#
+# Prereqs: ArgoCD installed; this repo registered; the git generator path below
+# pointed at your fork/branch.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nova-os-tenants
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/MeganovaAI/nova-os-stack.git
+        revision: main
+        files:
+          # [a-z]* excludes the underscore-prefixed _example.yaml template.
+          - path: "helm/tenants/[a-z]*.yaml"
+  template:
+    metadata:
+      # File basename (minus .yaml) → tenant name.
+      name: 'nova-os-{{ .path.filenameNormalized | trimSuffix ".yaml" }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/MeganovaAI/nova-os-stack.git
+        targetRevision: main
+        path: helm/nova-os
+        helm:
+          valueFiles:
+            - '../../{{ .path.path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        # One namespace per tenant.
+        namespace: 'tenant-{{ .path.filenameNormalized | trimSuffix ".yaml" }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

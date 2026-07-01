@@ -1,0 +1,40 @@
+# Copy this file to <tenant>.yaml to onboard a tenant.
+# With the ArgoCD ApplicationSet, that copy IS the onboarding — a new file in
+# helm/tenants/ becomes a new Application served at <tenant>.<domain>.
+#
+# Secrets: do NOT commit real secrets in plaintext. Either
+#   (a) set secrets.existingSecret to a Secret you manage out-of-band, or
+#   (b) encrypt this file with SOPS / sealed-secrets.
+
+tenant: acme
+
+ingress:
+  domain: os.meganovaai.com          # → acme.os.meganovaai.com
+  tls:
+    wildcardSecretName: wildcard-os-meganovaai-com-tls
+
+# Shared datastores (the fleet default). Provision db "acme" + role once; see README.
+database:
+  host: postgres.data.svc.cluster.local
+surreal:
+  url: ws://surrealdb.data.svc.cluster.local:8000/rpc
+
+secrets:
+  existingSecret: ""                 # recommended: name of a pre-created Secret
+  # --- or inline (encrypt this file!) ---
+  jwtSecret: "REPLACE-openssl-rand-hex-32"
+  adminEmail: "admin@acme.example"
+  adminPassword: "REPLACE-min-12-chars"
+  openaiApiKey: "REPLACE-gateway-key"
+  databaseUrl: "postgresql://nova:REPLACE@postgres.data.svc.cluster.local:5432/acme"
+  surrealPassword: "REPLACE"
+
+models:
+  openaiModel: "anthropic/claude-opus-4-7"
+  brainModel: "gemini/gemini-3-pro-preview"
+  skillModel: "gemini/gemini-2.5-flash"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3

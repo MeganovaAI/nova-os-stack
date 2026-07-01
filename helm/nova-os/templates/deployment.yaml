@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nova-os.fullname" . }}
+  labels:
+    {{- include "nova-os.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "nova-os.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nova-os.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: nova-os
+          image: {{ include "nova-os.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.ipcLock }}
+          securityContext:
+            capabilities:
+              # k8s equivalent of the compose `ulimits: memlock: -1` — exempts
+              # Go's EPOLLET netpoll from RLIMIT_MEMLOCK. See values.yaml.
+              add: ["IPC_LOCK"]
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8900
+          env:
+            - name: NOVA_OS_PORT
+              value: "8900"
+            - name: NOVA_OS_PUBLIC_URL
+              value: {{ include "nova-os.publicUrl" . | quote }}
+            # --- datastores ---
+            - name: NOVA_OS_SURREAL_URL
+              value: {{ include "nova-os.surrealUrl" . | quote }}
+            - name: NOVA_OS_SURREAL_NS
+              value: {{ include "nova-os.surrealNs" . | quote }}
+            - name: NOVA_OS_SURREAL_DB
+              value: {{ .Values.surreal.database | quote }}
+            - name: NOVA_OS_SURREAL_USER
+              value: "root"
+            - name: NOVA_OS_SURREAL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: SURREAL_PASSWORD
+            # --- secrets ---
+            - name: NOVA_OS_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: NOVA_OS_JWT_SECRET
+            - name: NOVA_OS_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: NOVA_OS_ADMIN_EMAIL
+            - name: NOVA_OS_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: NOVA_OS_ADMIN_PASSWORD
+            - name: NOVA_OS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: NOVA_OS_DATABASE_URL
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: NOVA_OS_INTEGRATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nova-os.secretName" . }}
+                  key: NOVA_OS_INTEGRATION_KEY
+                  optional: true
+            # --- model routing ---
+            {{- with .Values.models.openaiApiBase }}
+            - name: OPENAI_API_BASE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.models.openaiModel }}
+            - name: OPENAI_MODEL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.models.brainModel }}
+            - name: NOVA_OS_BRAIN_MODEL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.models.skillModel }}
+            - name: NOVA_OS_SKILL_MODEL
+              value: {{ . | quote }}
+            {{- end }}
+            # --- vertical / extra ---
+            {{- range $k, $v := .Values.extraEnv }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "nova-os.fullname" . }}-data
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

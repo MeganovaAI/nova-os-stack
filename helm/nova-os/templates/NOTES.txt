@@ -1,0 +1,26 @@
+Nova OS tenant "{{ include "nova-os.name" . }}" deployed.
+
+  URL:        {{ include "nova-os.publicUrl" . }}
+  Image:      {{ include "nova-os.image" . }}
+  Postgres:   {{ if .Values.postgres.enabled }}bundled ({{ include "nova-os.fullname" . }}-postgres){{ else }}external → db "{{ include "nova-os.dbName" . }}"{{ end }}
+  SurrealDB:  {{ if .Values.surrealdb.enabled }}bundled{{ else }}external{{ end }} → ns "{{ include "nova-os.surrealNs" . }}" / db "{{ .Values.surreal.database }}"
+
+Check rollout:
+  kubectl rollout status deploy/{{ include "nova-os.fullname" . }}
+  kubectl port-forward svc/{{ include "nova-os.fullname" . }} 8900:{{ .Values.service.port }} &
+  curl -s localhost:8900/health
+
+{{- if not .Values.postgres.enabled }}
+
+NOTE: external Postgres — the database "{{ include "nova-os.dbName" . }}" and role
+"{{ .Values.database.user }}" must exist before nova-os boots. nova-os runs its own
+schema migrations, but does NOT create the database itself. See helm/README.md.
+{{- end }}
+{{- if not .Values.ingress.tls.wildcardSecretName }}
+{{- if .Values.ingress.tls.enabled }}
+
+NOTE: no wildcard TLS secret set — a per-host certificate secret
+"{{ include "nova-os.fullname" . }}-tls" is expected (add a cert-manager
+cluster-issuer annotation to ingress.annotations to have it issued).
+{{- end }}
+{{- end }}

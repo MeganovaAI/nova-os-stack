@@ -1,0 +1,152 @@
+# Default values for one Nova OS tenant.
+#
+# The fleet model: install this chart once per tenant (one Helm release per
+# subdomain), pointing every tenant at a SHARED Postgres + SurrealDB with a
+# per-tenant database / namespace. nova-os itself is stateless, so a tenant is
+# just a Deployment + Ingress + a small PVC for writable files.
+#
+# For a self-contained single-tenant install (dev, a one-off partner box), flip
+# postgres.enabled / surrealdb.enabled to true and this chart will bring up its
+# own datastores instead.
+
+# --- Identity -----------------------------------------------------------------
+# The tenant slug. Drives resource names, the subdomain, and the per-tenant DB
+# name when using a shared Postgres. Keep it DNS-safe (lowercase, hyphens).
+tenant: example
+
+image:
+  repository: ghcr.io/meganovaai/nova-os
+  # Defaults to .Chart.appVersion (the current production line) when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+pullSecrets: []
+
+replicaCount: 1
+
+# --- Networking / subdomain ---------------------------------------------------
+service:
+  port: 8900
+
+ingress:
+  enabled: true
+  className: nginx
+  # The wildcard base. The tenant is served at <tenant>.<domain>.
+  domain: os.meganovaai.com
+  # Full host override; when empty it is "<tenant>.<domain>".
+  host: ""
+  # Extra annotations (e.g. cert-manager, body size, timeouts for long jobs).
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+  tls:
+    enabled: true
+    # A pre-provisioned wildcard cert secret (recommended: one cert for
+    # *.<domain>, issued once, reused by every tenant). When set, no per-tenant
+    # certificate is requested.
+    wildcardSecretName: "wildcard-os-meganovaai-com-tls"
+    # OR let cert-manager issue a per-host cert: set wildcardSecretName to ""
+    # and add cert-manager.io/cluster-issuer to ingress.annotations.
+
+# NOVA_OS_PUBLIC_URL is load-bearing (OIDC discovery + callback URLs derive from
+# it). Defaults to https://<ingress host>; override only for odd proxy setups.
+publicUrl: ""
+
+# --- Secrets (required) -------------------------------------------------------
+# Provide these per tenant. In production, reference an existing Secret you
+# manage out-of-band (existingSecret) rather than putting values in Git.
+secrets:
+  # Name of a pre-created Secret with the keys below. When set, inline values
+  # are ignored and no Secret is rendered by the chart.
+  existingSecret: ""
+  # Inline values (dev / sealed-secrets / SOPS). Keys map to Nova OS env vars.
+  jwtSecret: ""          # NOVA_OS_JWT_SECRET  — openssl rand -hex 32 (>=16 chars)
+  adminEmail: ""         # NOVA_OS_ADMIN_EMAIL — NOT ccao@meganova.ai
+  adminPassword: ""      # NOVA_OS_ADMIN_PASSWORD — >=12 chars
+  openaiApiKey: ""       # OPENAI_API_KEY (gateway key)
+  integrationKey: ""     # NOVA_OS_INTEGRATION_KEY — 64 hex (AES-256), optional
+  # Datastore credentials (used to compose the URLs below when not overridden).
+  databaseUrl: ""        # full NOVA_OS_DATABASE_URL; overrides database.* below
+  postgresPassword: ""   # used with database.host/user/name when databaseUrl is empty
+  surrealPassword: "root"
+
+# --- Datastores ---------------------------------------------------------------
+# Shared external Postgres (the fleet default). The per-tenant database is
+# "<tenant>" unless database.name is set. You provision the database + role
+# once per tenant (see helm/README.md); nova-os runs its own migrations on boot.
+database:
+  # host:port of the shared Postgres.
+  host: postgres.data.svc.cluster.local
+  port: 5432
+  user: nova
+  # Password comes from secrets.databaseUrl if you provide a full URL; otherwise
+  # from an env-referenced secret key. For simplicity in-cluster, provide the
+  # full URL via secrets.databaseUrl.
+  name: ""   # defaults to the tenant slug
+
+surreal:
+  # Shared external SurrealDB. Per-tenant isolation via namespace + database.
+  url: ws://surrealdb.data.svc.cluster.local:8000/rpc
+  namespace: ""   # defaults to the tenant slug
+  database: knowledge
+
+# Optional: bundle datastores INSIDE this release (self-contained single tenant).
+# For a dense subdomain fleet, leave these false and share external datastores.
+postgres:
+  enabled: false
+  image: postgres:16-alpine
+  storage: 5Gi
+  storageClass: ""
+surrealdb:
+  enabled: false
+  image: surrealdb/surrealdb:v3
+  storage: 5Gi
+  storageClass: ""
+
+# --- Writable data (runtime agents, uploaded docs, rendered reports) ----------
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: ""
+  # Nova OS writes runtime agents / documents / reports under /data.
+  mountPath: /data
+
+# --- Model routing (per tenant) ----------------------------------------------
+# Passed straight through as env. Leave empty to use the image/gateway defaults.
+models:
+  openaiApiBase: https://api.meganova.ai
+  openaiModel: ""        # OPENAI_MODEL  (answer tier)
+  brainModel: ""         # NOVA_OS_BRAIN_MODEL
+  skillModel: ""         # NOVA_OS_SKILL_MODEL
+
+# --- Vertical pack (school / legal / etc. overlay) ---------------------------
+# Extra env for a vertical companion (e.g. nova-os-school). Free-form map.
+extraEnv: {}
+  # NOVA_OS_OBSERVATIONAL_MEMORY: "1"
+  # NOVA_OS_KNOWLEDGE_GATE_ENABLED: "true"
+
+# --- Pod shape ----------------------------------------------------------------
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 75
+
+# Go's netpoll uses EPOLLET, whose watches are accounted against RLIMIT_MEMLOCK
+# (default 64 KiB on many container runtimes) — nova-os fails to start when it's
+# too low. CAP_IPC_LOCK exempts the process from that accounting. This is the
+# k8s equivalent of the compose file's `ulimits: memlock: -1`. Set false on
+# restricted clusters that forbid added capabilities, and raise the node
+# runtime's default memlock ulimit instead.
+ipcLock: true
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
