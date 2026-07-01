@@ -1,0 +1,35 @@
+# Example: a school-vertical tenant (nova-os-school overlay) at
+# bosong.os.meganovaai.com. Secrets referenced from a pre-created Secret.
+
+tenant: bosong
+
+ingress:
+  domain: os.meganovaai.com
+  tls:
+    wildcardSecretName: wildcard-os-meganovaai-com-tls
+
+database:
+  host: postgres.data.svc.cluster.local
+surreal:
+  url: ws://surrealdb.data.svc.cluster.local:8000/rpc
+
+secrets:
+  # Pre-created out-of-band: kubectl create secret generic bosong-secrets \
+  #   --from-literal=NOVA_OS_JWT_SECRET=... --from-literal=NOVA_OS_ADMIN_EMAIL=... \
+  #   --from-literal=NOVA_OS_ADMIN_PASSWORD=... --from-literal=NOVA_OS_DATABASE_URL=... \
+  #   --from-literal=OPENAI_API_KEY=... --from-literal=SURREAL_PASSWORD=...
+  existingSecret: bosong-secrets
+
+models:
+  openaiModel: "anthropic/claude-opus-4-7"
+  skillModel: "gemini/gemini-2.5-flash"
+
+# School-vertical toggles (the nova-os-school overlay reads these).
+extraEnv:
+  NOVA_OS_OBSERVATIONAL_MEMORY: "1"
+  NOVA_OS_ENABLED_LOCALES: "en,zh-CN"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4

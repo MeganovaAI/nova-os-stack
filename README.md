@@ -139,6 +139,18 @@ docker compose -f docker-compose.eval.yaml --env-file .env.eval down -v
 
 No kernel flag, no special configuration on the production instance — eval is just a separate `nova-os` process.
 
+## Kubernetes — multi-tenant by subdomain
+
+To run many isolated tenants on one cluster, each on its own subdomain
+(`<tenant>.os.example.com`), use the Helm chart in [`helm/`](helm/). Each tenant
+is a stateless `nova-os` Deployment behind a wildcard Ingress, backed by a
+shared Postgres (db-per-tenant) and SurrealDB (namespace-per-tenant) — infra
+isolation, not app multi-tenancy. With the ArgoCD ApplicationSet, **onboarding a
+tenant is one values file** in `helm/tenants/`. See [`helm/README.md`](helm/README.md).
+
+Below ~5–10 tenants, the single-host compose templates above are simpler; reach
+for k8s when the operated fleet is the bottleneck.
+
 ## Versioning
 
 Each tag of this repo pins a known-working set of (Nova OS, companion-app) image versions. The default in `.env.example` and `docker-compose.yml` tracks the most recent tested Nova OS release.

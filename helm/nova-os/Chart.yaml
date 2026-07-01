@@ -1,0 +1,21 @@
+apiVersion: v2
+name: nova-os
+description: >-
+  One Nova OS tenant on Kubernetes — a stateless nova-os Deployment behind a
+  subdomain Ingress, backed by (shared, external) Postgres + SurrealDB. Install
+  once per tenant; onboarding a tenant is one values file. Optional bundled
+  Postgres + SurrealDB for a self-contained single-tenant install.
+type: application
+version: 0.1.0
+# The Nova OS server image tag this chart defaults to. Override per tenant with
+# image.tag. Track the current production line.
+appVersion: "v0.1.11"
+keywords:
+  - nova-os
+  - multi-tenant
+  - agents
+home: https://github.com/MeganovaAI/nova-os-stack
+sources:
+  - https://github.com/MeganovaAI/nova-os-stack
+maintainers:
+  - name: MeganovaAI
