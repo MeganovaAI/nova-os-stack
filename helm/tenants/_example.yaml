@@ -9,9 +9,9 @@
 tenant: acme
 
 ingress:
-  domain: os.meganovaai.com          # → acme.os.meganovaai.com
+  domain: os.novaos.ai          # → acme.os.novaos.ai
   tls:
-    wildcardSecretName: wildcard-os-meganovaai-com-tls
+    wildcardSecretName: wildcard-os-novaos-ai-tls
 
 # Shared datastores (the fleet default). Provision db "acme" + role once; see README.
 database:

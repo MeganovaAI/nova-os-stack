@@ -1,0 +1,46 @@
+# Example: a partner tenant served on the PARTNER'S OWN domain instead of the
+# fleet's <tenant>.os.novaos.ai subdomain.
+#
+# The domain split this supports:
+#   - Nova OS product surfaces (playground, demos)  → *.os.novaos.ai (fleet default)
+#   - Partner tenants (their product, their users)  → the partner's domain (this file)
+#   - Gateway / API                                 → api.meganova.ai (not served here)
+#
+# A tenant's end users should see the partner's brand in the URL bar, not the
+# infra's. The partner CNAMEs their host at the cluster's ingress LB:
+#
+#   app.acme-school.com.  CNAME  ingress.os.novaos.ai.
+#
+# The wildcard *.os.novaos.ai cert does NOT cover a foreign domain, so this
+# tenant gets its own per-host certificate from cert-manager (HTTP-01 works
+# because the CNAME already points at the ingress).
+
+tenant: acme-school
+
+ingress:
+  # Full-host override — ingress.domain is ignored when host is set.
+  host: app.acme-school.com
+  tls:
+    # Leave the wildcard secret empty → the chart expects a per-host cert
+    # secret "nova-os-acme-school-tls"; the annotation below has cert-manager
+    # issue it via the cluster's ACME issuer.
+    wildcardSecretName: ""
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+# NOVA_OS_PUBLIC_URL derives from ingress.host automatically
+# (https://app.acme-school.com) — OIDC discovery/callbacks stay correct.
+
+database:
+  host: postgres.data.svc.cluster.local
+surreal:
+  url: ws://surrealdb.data.svc.cluster.local:8000/rpc
+
+secrets:
+  existingSecret: acme-school-secrets
+
+models:
+  openaiModel: "anthropic/claude-opus-4-7"
+  skillModel: "gemini/gemini-2.5-flash"

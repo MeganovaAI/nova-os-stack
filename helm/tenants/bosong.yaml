@@ -1,12 +1,12 @@
 # Example: a school-vertical tenant (nova-os-school overlay) at
-# bosong.os.meganovaai.com. Secrets referenced from a pre-created Secret.
+# bosong.os.novaos.ai. Secrets referenced from a pre-created Secret.
 
 tenant: bosong
 
 ingress:
-  domain: os.meganovaai.com
+  domain: os.novaos.ai
   tls:
-    wildcardSecretName: wildcard-os-meganovaai-com-tls
+    wildcardSecretName: wildcard-os-novaos-ai-tls
 
 database:
   host: postgres.data.svc.cluster.local

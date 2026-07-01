@@ -31,7 +31,7 @@ ingress:
   enabled: true
   className: nginx
   # The wildcard base. The tenant is served at <tenant>.<domain>.
-  domain: os.meganovaai.com
+  domain: os.novaos.ai
   # Full host override; when empty it is "<tenant>.<domain>".
   host: ""
   # Extra annotations (e.g. cert-manager, body size, timeouts for long jobs).
@@ -43,7 +43,7 @@ ingress:
     # A pre-provisioned wildcard cert secret (recommended: one cert for
     # *.<domain>, issued once, reused by every tenant). When set, no per-tenant
     # certificate is requested.
-    wildcardSecretName: "wildcard-os-meganovaai-com-tls"
+    wildcardSecretName: "wildcard-os-novaos-ai-tls"
     # OR let cert-manager issue a per-host cert: set wildcardSecretName to ""
     # and add cert-manager.io/cluster-issuer to ingress.annotations.
 
