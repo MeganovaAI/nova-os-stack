@@ -1,7 +1,7 @@
 # Nova OS on Kubernetes — multi-tenant by subdomain
 
 Run many isolated Nova OS tenants on one cluster, each on its own subdomain
-(`<tenant>.os.novaos.ai`), with **onboarding a tenant = one values file**.
+(`<tenant>.meganova.app`), with **onboarding a tenant = one values file**.
 
 This is *infrastructure* multi-tenancy, not application multi-tenancy: every
 tenant is its own stateless `nova-os` Deployment with its own database — the
@@ -18,7 +18,7 @@ the ops of running many instances.
 ## Architecture
 
 ```
-                          *.os.novaos.ai  (wildcard DNS → ingress LB)
+                          *.meganova.app  (wildcard DNS → ingress LB)
                                     │
                        ┌────────────┴────────────┐   ingress-nginx + one
                        │      Ingress rules       │   wildcard TLS cert
@@ -43,8 +43,8 @@ the ops of running many instances.
 ## Prerequisites
 
 - An ingress controller (defaults assume `ingress-nginx`).
-- Wildcard DNS `*.os.novaos.ai` → the ingress load balancer.
-- A wildcard TLS cert for `*.os.novaos.ai` in a Secret (issue once with
+- Wildcard DNS `*.meganova.app` → the ingress load balancer.
+- A wildcard TLS cert for `*.meganova.app` in a Secret (issue once with
   cert-manager + a DNS-01 issuer, reused by every tenant): set
   `ingress.tls.wildcardSecretName`. Or drop it and add a cert-manager
   cluster-issuer annotation for per-host certs.
@@ -81,7 +81,7 @@ kubectl apply -f ./helm/argocd/applicationset.yaml
 ```
 
 Now **dropping `helm/tenants/<tenant>.yaml` into the repo creates the tenant**
-(its own namespace `tenant-<name>`, served at `<tenant>.os.novaos.ai`);
+(its own namespace `tenant-<name>`, served at `<tenant>.meganova.app`);
 deleting the file removes it. The ApplicationSet renders `helm/nova-os` with
 each tenant file. `[a-z]*.yaml` in the generator skips the `_example*.yaml` templates.
 
@@ -89,7 +89,7 @@ each tenant file. `[a-z]*.yaml` in the generator skips the `_example*.yaml` temp
 
 | Surface | Domain | Example |
 |---|---|---|
-| Nova OS product (playground, demos) | `*.os.novaos.ai` (fleet default) | `acme.os.novaos.ai` |
+| Nova OS product (playground, demos) | `*.meganova.app` (fleet default) | `acme.meganova.app` |
 | Partner tenant (their product, their users) | the **partner's own domain** | `app.acme-school.com` |
 | Gateway / API | `api.meganova.ai` | (not served by this chart) |
 
@@ -99,7 +99,7 @@ the infra's. Set `ingress.host` to the partner's host (it overrides
 cert-manager issue a per-host cert (the wildcard cert doesn't cover foreign
 domains) — see [`tenants/_example-custom-domain.yaml`](tenants/_example-custom-domain.yaml).
 `NOVA_OS_PUBLIC_URL` follows `ingress.host` automatically, so OIDC stays correct.
-The `<tenant>.os.novaos.ai` subdomain remains useful as an internal/demo address.
+The `<tenant>.meganova.app` subdomain remains useful as an internal/demo address.
 
 ## Secrets
 
