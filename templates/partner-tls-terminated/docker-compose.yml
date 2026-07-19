@@ -1,4 +1,4 @@
-# Partner TLS-Terminated Template — Nova OS + LibreChat, HTTP-only
+# Partner TLS-Terminated Template — Libra OS + LibreChat, HTTP-only
 # behind the partner's existing reverse proxy (Cloudflare, ALB, Caddy, ...).
 #
 # Bring up:
@@ -10,7 +10,7 @@ name: nova-os-partner
 
 services:
   nova-os:
-    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.8}
+    image: ghcr.io/libraos/libraos:${NOVA_OS_VERSION:-v0.1.14}
     container_name: nova-os
     restart: unless-stopped
     ports:
@@ -80,7 +80,7 @@ services:
       - PORT=3080
       - MONGO_URI=mongodb://librechat-db:27017/LibreChat
       - ENDPOINTS=custom
-      - APP_TITLE=${APP_TITLE:-Nova OS}
+      - APP_TITLE=${APP_TITLE:-Libra OS}
       - NOVA_OS_HOST=http://nova-os:8900
       - NOVA_OS_OIDC_AUTODISCOVER=1
       - "OPENID_CLIENT_SECRET=${NOVA_OS_OIDC_CLIENT_SECRET:?required - openssl rand -hex 32}"
@@ -88,7 +88,7 @@ services:
       - OPENID_SCOPE=openid profile email
       - "OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:?required - openssl rand -base64 48}"
       - OPENID_CALLBACK_URL=/oauth/openid/callback
-      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - OPENID_BUTTON_LABEL=Sign in with Libra OS
       - DOMAIN_SERVER=${NOVA_OS_PUBLIC_URL}/chat
       - DOMAIN_CLIENT=${NOVA_OS_PUBLIC_URL}/chat
     depends_on:

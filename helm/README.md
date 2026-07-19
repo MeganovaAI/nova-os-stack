@@ -1,6 +1,6 @@
-# Nova OS on Kubernetes — multi-tenant by subdomain
+# Libra OS on Kubernetes — multi-tenant by subdomain
 
-Run many isolated Nova OS tenants on one cluster, each on its own subdomain
+Run many isolated Libra OS tenants on one cluster, each on its own subdomain
 (`<tenant>.meganova.app`), with **onboarding a tenant = one values file**.
 
 This is *infrastructure* multi-tenancy, not application multi-tenancy: every
@@ -89,7 +89,7 @@ each tenant file. `[a-z]*.yaml` in the generator skips the `_example*.yaml` temp
 
 | Surface | Domain | Example |
 |---|---|---|
-| Nova OS product (playground, demos) | `*.meganova.app` (fleet default) | `acme.meganova.app` |
+| Libra OS product (playground, demos) | `*.meganova.app` (fleet default) | `acme.meganova.app` |
 | Partner tenant (their product, their users) | the **partner's own domain** | `app.acme-school.com` |
 | Gateway / API | `api.meganova.ai` | (not served by this chart) |
 
@@ -108,7 +108,7 @@ Never commit plaintext secrets. Either:
   (recommended; see `bosong.yaml`), or
 - encrypt the tenant values file with **SOPS** or **sealed-secrets**.
 
-Nova OS's boot security guard **refuses to start** unless:
+Libra OS's boot security guard **refuses to start** unless:
 `NOVA_OS_JWT_SECRET` (≥16 chars), `NOVA_OS_ADMIN_EMAIL` (not the old leaked
 default), `NOVA_OS_ADMIN_PASSWORD` (≥12 chars) are set. The chart marks these
 `required`.

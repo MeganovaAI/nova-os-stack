@@ -1,4 +1,4 @@
-# Local Dev Template — single-host HTTP-only Nova OS + LibreChat.
+# Local Dev Template — single-host HTTP-only Libra OS + LibreChat.
 #
 # Composes the root nova-os-stack core compose with the LibreChat
 # companion overlay. No TLS, no reverse proxy, ports bound directly
@@ -13,7 +13,7 @@ name: nova-os-local-dev
 
 services:
   nova-os:
-    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.8}
+    image: ghcr.io/libraos/libraos:${NOVA_OS_VERSION:-v0.1.14}
     container_name: nova-os
     restart: unless-stopped
     ports:
@@ -87,7 +87,7 @@ services:
       - PORT=3080
       - MONGO_URI=mongodb://librechat-db:27017/LibreChat
       - ENDPOINTS=custom
-      - APP_TITLE=${APP_TITLE:-Nova OS Chat}
+      - APP_TITLE=${APP_TITLE:-Libra OS Chat}
       # nova-os#521: LibreChat auto-discovers OIDC issuer from this URL.
       - NOVA_OS_HOST=${NOVA_OS_PUBLIC_URL:-http://host.docker.internal:8900}
       - NOVA_OS_OIDC_AUTODISCOVER=1
@@ -97,7 +97,7 @@ services:
       - OPENID_SCOPE=openid profile email
       - OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:-local-dev-openid-session-secret}
       - OPENID_CALLBACK_URL=/oauth/openid/callback
-      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - OPENID_BUTTON_LABEL=Sign in with Libra OS
       - DOMAIN_SERVER=${NOVA_OS_LIBRECHAT_URL:-http://localhost:3080}
       - DOMAIN_CLIENT=${NOVA_OS_LIBRECHAT_URL:-http://localhost:3080}
       - NODE_TLS_REJECT_UNAUTHORIZED=0

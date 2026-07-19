@@ -1,6 +1,6 @@
 # Upgrading
 
-Upgrading Nova OS is a Docker image swap. Postgres + SurrealDB persistence is preserved across upgrades — schema migrations run automatically on first boot of the new version.
+Upgrading Libra OS is a Docker image swap. Postgres + SurrealDB persistence is preserved across upgrades — schema migrations run automatically on first boot of the new version.
 
 ## Pin a version
 
@@ -65,5 +65,5 @@ Each companion app uses its upstream image's `:latest` tag by default. Pin them 
 | Channel | Cadence | Setup |
 |---|---|---|
 | GitHub Releases watch | Every tag | Watch [`MeganovaAI/nova-os-sdk`](https://github.com/MeganovaAI/nova-os-sdk) → Custom → Releases |
-| `:latest` Docker tag | Every stable release (skips RCs) | `docker pull ghcr.io/meganovaai/nova-os:latest` |
+| `:latest` Docker tag | Every stable release (skips RCs) | `docker pull ghcr.io/libraos/libraos:latest` |
 | RSS feed | Every release | <https://github.com/MeganovaAI/nova-os-sdk/releases.atom> |

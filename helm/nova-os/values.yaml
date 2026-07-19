@@ -1,4 +1,4 @@
-# Default values for one Nova OS tenant.
+# Default values for one Libra OS tenant.
 #
 # The fleet model: install this chart once per tenant (one Helm release per
 # subdomain), pointing every tenant at a SHARED Postgres + SurrealDB with a
@@ -15,7 +15,7 @@
 tenant: example
 
 image:
-  repository: ghcr.io/meganovaai/nova-os
+  repository: ghcr.io/libraos/libraos
   # Defaults to .Chart.appVersion (the current production line) when empty.
   tag: ""
   pullPolicy: IfNotPresent
@@ -58,7 +58,7 @@ secrets:
   # Name of a pre-created Secret with the keys below. When set, inline values
   # are ignored and no Secret is rendered by the chart.
   existingSecret: ""
-  # Inline values (dev / sealed-secrets / SOPS). Keys map to Nova OS env vars.
+  # Inline values (dev / sealed-secrets / SOPS). Keys map to Libra OS env vars.
   jwtSecret: ""          # NOVA_OS_JWT_SECRET  — openssl rand -hex 32 (>=16 chars)
   adminEmail: ""         # NOVA_OS_ADMIN_EMAIL — NOT ccao@meganova.ai
   adminPassword: ""      # NOVA_OS_ADMIN_PASSWORD — >=12 chars
@@ -107,7 +107,7 @@ persistence:
   enabled: true
   size: 2Gi
   storageClass: ""
-  # Nova OS writes runtime agents / documents / reports under /data.
+  # Libra OS writes runtime agents / documents / reports under /data.
   mountPath: /data
 
 # --- Model routing (per tenant) ----------------------------------------------

@@ -1,4 +1,4 @@
-# LibreChat configuration for Nova OS.
+# LibreChat configuration for Libra OS.
 # Mounted read-only into the LibreChat container at /app/librechat.yaml.
 version: 1.2.1
 cache: true
@@ -7,7 +7,7 @@ registration:
   socialLogins:
     - openid
 
-# Balance/credit tracking disabled — Nova OS handles quota upstream at the
+# Balance/credit tracking disabled — Libra OS handles quota upstream at the
 # /v1/chat/completions layer. Replaces the deprecated CHECK_BALANCE env var.
 balance:
   enabled: false
@@ -22,12 +22,12 @@ endpoints:
     disableBuilder: true
     disabled: true
   custom:
-    - name: "Nova OS"
+    - name: "Libra OS"
       apiKey: "${NOVA_OS_API_KEY}"
-      # baseURL is the Nova OS /v1/chat/completions endpoint reached from
+      # baseURL is the Libra OS /v1/chat/completions endpoint reached from
       # inside the LibreChat container. With the root compose's `nova-net`
-      # network, the Nova OS service is addressable as `nova-os`. Override
-      # via the NOVA_OS_INTERNAL_URL env var if you run Nova OS outside
+      # network, the Libra OS service is addressable as `nova-os`. Override
+      # via the NOVA_OS_INTERNAL_URL env var if you run Libra OS outside
       # this stack — LibreChat's yaml parser only supports plain ${VAR},
       # not ${VAR:-default}, so the value is hardcoded here.
       baseURL: "http://nova-os:8900/v1"

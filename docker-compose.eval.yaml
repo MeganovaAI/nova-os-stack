@@ -17,7 +17,7 @@
 
 services:
   nova-os-eval:
-    image: ghcr.io/meganovaai/nova-os:v0.1.7
+    image: ghcr.io/libraos/libraos:v0.1.7
     container_name: nova-os-eval
     ports:
       - "8901:8900"     # eval on host port 8901; production stays on 8900

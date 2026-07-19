@@ -1,21 +1,21 @@
-# Nova OS Stack
+# Libra OS Stack
 
-Reference deployment manifests for [Nova OS](https://github.com/MeganovaAI/nova-os-sdk) — the agentic operating system from MegaNova.
+Reference deployment manifests for [Libra OS](https://github.com/MeganovaAI/nova-os-sdk) — the agentic operating system from MegaNova.
 
 This repo contains:
 
-- A root `docker-compose.yml` that brings up **Nova OS core** (server + Postgres + SurrealDB) from the public Docker image at `ghcr.io/meganovaai/nova-os`.
+- A root `docker-compose.yml` that brings up **Libra OS core** (server + Postgres + SurrealDB) from the public Docker image at `ghcr.io/libraos/libraos`.
 - An `apps/` directory with optional companion stacks: LibreChat (chat UI), SearXNG (meta-search), crawl4ai (page fetcher), Docling (document parser).
 - `docs/` with cross-cutting setup notes (networking, OIDC, upgrades).
 
-You don't need any of the apps under `apps/` to run Nova OS. Pull only what you need.
+You don't need any of the apps under `apps/` to run Libra OS. Pull only what you need.
 
 **Current tested version:** `v0.1.7`. The default in `.env.example` and `docker-compose.yml` is pinned to this tag. Newer tags may have config or behavior changes not yet reflected here.
 
 ## Quickstart — core only
 
 ```bash
-git clone https://github.com/MeganovaAI/nova-os-stack.git
+git clone https://github.com/libraos/stack.git
 cd nova-os-stack
 
 cp .env.example .env
@@ -40,7 +40,7 @@ The full install walkthrough lives at <https://docs.meganova.ai/nova-os/install>
 
 ## Multi-app primitive (v0.1.7+)
 
-Nova OS hosts multiple partner-built **apps** in one process. Each app is a self-contained unit of agents + Postgres tables + a manifest, hot-loaded into the running server without restart.
+Libra OS hosts multiple partner-built **apps** in one process. Each app is a self-contained unit of agents + Postgres tables + a manifest, hot-loaded into the running server without restart.
 
 The compose file mounts a persistent volume at `/var/nova-os/apps` so anything you install via the lifecycle endpoints survives container restarts. Without the mount, installed apps would be wiped on `docker compose down/up`.
 
@@ -73,7 +73,7 @@ docker compose cp ./my-app nova-os:/var/nova-os/apps/my-app
 docker compose exec nova-os nova-os apps install my-app --token "$ADMIN_JWT"
 ```
 
-The directory must contain a `nova-app.yaml` manifest, an `agents/` subdir of markdown agent definitions, and a `migrations/` subdir of SQL files. Full manifest format + lifecycle docs: see `docs/apps.md` in the [Nova OS SDK reference repo](https://github.com/MeganovaAI/nova-os-sdk).
+The directory must contain a `nova-app.yaml` manifest, an `agents/` subdir of markdown agent definitions, and a `migrations/` subdir of SQL files. Full manifest format + lifecycle docs: see `docs/apps.md` in the [Libra OS SDK reference repo](https://github.com/MeganovaAI/nova-os-sdk).
 
 ## Adding a companion app
 
@@ -88,16 +88,16 @@ docker compose -f docker-compose.yml -f apps/librechat/docker-compose.yaml up -d
 
 | App | Purpose | Default port | License |
 |---|---|---|---|
-| [`apps/librechat`](apps/librechat) | Chat UI (LibreChat) wired to Nova OS via OIDC + custom endpoint | 3080 | MIT |
+| [`apps/librechat`](apps/librechat) | Chat UI (LibreChat) wired to Libra OS via OIDC + custom endpoint | 3080 | MIT |
 | [`apps/searxng`](apps/searxng) | Self-hosted meta-search aggregator (zero API cost) | 8888 | AGPL-3.0 |
 | [`apps/crawl4ai`](apps/crawl4ai) | JS-friendly page fetcher | 11235 | Apache-2.0 |
 | [`apps/docling`](apps/docling) | Document-to-Markdown parser (PDF OCR + DOCX) | 5001 | Apache-2.0 |
 
-> **Apps under `apps/`** are companion *services* (separate containers wired to Nova OS over HTTP). They're distinct from **Nova OS apps** described in the previous section — those are partner-authored agent + migration bundles that load into the Nova OS process itself. Both exist; they're different scoping primitives.
+> **Apps under `apps/`** are companion *services* (separate containers wired to Libra OS over HTTP). They're distinct from **Libra OS apps** described in the previous section — those are partner-authored agent + migration bundles that load into the Libra OS process itself. Both exist; they're different scoping primitives.
 
 ### Licensing note
 
-SearXNG is AGPL-3.0. Nova OS communicates with it over its public HTTP API only — it does not bundle or link against it. Customers who prefer to avoid AGPL components entirely can swap in an alternative search backend (Tavily, Brave, Exa, MegaNova gateway) via the documented `Searcher` interface.
+SearXNG is AGPL-3.0. Libra OS communicates with it over its public HTTP API only — it does not bundle or link against it. Customers who prefer to avoid AGPL components entirely can swap in an alternative search backend (Tavily, Brave, Exa, MegaNova gateway) via the documented `Searcher` interface.
 
 ## Two-instance evaluation pattern
 
@@ -153,13 +153,13 @@ for k8s when the operated fleet is the bottleneck.
 
 ## Versioning
 
-Each tag of this repo pins a known-working set of (Nova OS, companion-app) image versions. The default in `.env.example` and `docker-compose.yml` tracks the most recent tested Nova OS release.
+Each tag of this repo pins a known-working set of (Libra OS, companion-app) image versions. The default in `.env.example` and `docker-compose.yml` tracks the most recent tested Libra OS release.
 
-| Stack tag | Nova OS image | Notes |
+| Stack tag | Libra OS image | Notes |
 |---|---|---|
 | `main` (current) | `v0.1.7` | Multi-app primitive, admin UI for apps, `nova-os apps` CLI |
 
-- Nova OS image versions: <https://github.com/orgs/MeganovaAI/packages/container/package/nova-os>
+- Libra OS image versions: <https://github.com/orgs/MeganovaAI/packages/container/package/nova-os>
 - Release notes: <https://docs.meganova.ai/nova-os/releases>
 
 ## Docs
@@ -167,8 +167,8 @@ Each tag of this repo pins a known-working set of (Nova OS, companion-app) image
 - [Install guide](https://docs.meganova.ai/nova-os/install) — first-time setup
 - [docs/networking.md](docs/networking.md) — how the containers reach each other
 - [docs/oidc-setup.md](docs/oidc-setup.md) — how to register companion apps as OIDC clients
-- [docs/upgrade.md](docs/upgrade.md) — upgrading between Nova OS versions
-- [docs/ag-ui.md](docs/ag-ui.md) — wiring CopilotKit or any AG-UI client to Nova OS
+- [docs/upgrade.md](docs/upgrade.md) — upgrading between Libra OS versions
+- [docs/ag-ui.md](docs/ag-ui.md) — wiring CopilotKit or any AG-UI client to Libra OS
 
 ## License
 

@@ -1,4 +1,4 @@
-# Single-Host Prod Template — Nova OS + LibreChat behind nginx TLS proxy.
+# Single-Host Prod Template — Libra OS + LibreChat behind nginx TLS proxy.
 #
 # nginx terminates TLS on :443, fans out to nova-os (8900) and
 # librechat (3080) over the internal docker network. Internal
@@ -29,7 +29,7 @@ services:
       - nova-net
 
   nova-os:
-    image: ghcr.io/meganovaai/nova-os:${NOVA_OS_VERSION:-v0.1.8}
+    image: ghcr.io/libraos/libraos:${NOVA_OS_VERSION:-v0.1.14}
     container_name: nova-os
     restart: unless-stopped
     # NOT exposed publicly — nginx routes to it internally.
@@ -100,7 +100,7 @@ services:
       - PORT=3080
       - MONGO_URI=mongodb://librechat-db:27017/LibreChat
       - ENDPOINTS=custom
-      - APP_TITLE=${APP_TITLE:-Nova OS}
+      - APP_TITLE=${APP_TITLE:-Libra OS}
       # nova-os#521: LibreChat auto-discovers OIDC issuer at boot. Single
       # source of truth — nova-os's /.well-known/openid-configuration.
       - NOVA_OS_HOST=http://nova-os:8900
@@ -110,7 +110,7 @@ services:
       - OPENID_SCOPE=openid profile email
       - "OPENID_SESSION_SECRET=${OPENID_SESSION_SECRET:?required - openssl rand -base64 48}"
       - OPENID_CALLBACK_URL=/oauth/openid/callback
-      - OPENID_BUTTON_LABEL=Sign in with Nova OS
+      - OPENID_BUTTON_LABEL=Sign in with Libra OS
       - DOMAIN_SERVER=${NOVA_OS_PUBLIC_URL}/chat
       - DOMAIN_CLIENT=${NOVA_OS_PUBLIC_URL}/chat
     depends_on:

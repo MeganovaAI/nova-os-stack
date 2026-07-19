@@ -1,6 +1,6 @@
 # Deployment templates
 
-Three ready-to-use docker-compose layouts for the most common Nova OS
+Three ready-to-use docker-compose layouts for the most common Libra OS
 deployment shapes. Each has its own `.env.example`, `docker-compose.yml`,
 `verify.sh`, and a deployment-specific README.
 
@@ -8,7 +8,7 @@ deployment shapes. Each has its own `.env.example`, `docker-compose.yml`,
 |---|---|
 | [`local-dev/`](local-dev/) | Single host, laptop or demo box. HTTP only, no TLS. Operator is the only user. |
 | [`single-host-prod/`](single-host-prod/) | Single host, real partner traffic. Includes nginx + TLS termination with operator-managed certs (Let's Encrypt etc.). |
-| [`partner-tls-terminated/`](partner-tls-terminated/) | Partner already has a TLS-terminating reverse proxy upstream (Cloudflare Tunnel, AWS ALB, Caddy, K8s ingress, corporate LB). Nova OS runs HTTP internally; partner's existing infra handles TLS + WAF. |
+| [`partner-tls-terminated/`](partner-tls-terminated/) | Partner already has a TLS-terminating reverse proxy upstream (Cloudflare Tunnel, AWS ALB, Caddy, K8s ingress, corporate LB). Libra OS runs HTTP internally; partner's existing infra handles TLS + WAF. |
 
 All three:
 
@@ -28,7 +28,7 @@ which audits ~10 correctness signals from inside the container.
                   │
    New deploy ────┼─ "I have one host I control end-to-end" ───► single-host-prod/
                   │
-                  └─ "I'm wiring Nova OS into existing infra" ─► partner-tls-terminated/
+                  └─ "I'm wiring Libra OS into existing infra" ─► partner-tls-terminated/
 ```
 
 If you outgrow `local-dev/`, move to `single-host-prod/` by adding nginx

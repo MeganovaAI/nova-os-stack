@@ -12,7 +12,7 @@ docker compose -f docker-compose.yml -f apps/crawl4ai/docker-compose.yaml up -d
 
 API will be available on `http://localhost:11235`.
 
-## Wire to Nova OS
+## Wire to Libra OS
 
 Add to the root `.env`:
 
@@ -30,4 +30,4 @@ curl -sS -X POST http://localhost:11235/crawl \
 
 ## Known limitation
 
-crawl4ai returns HTTP 500 with a "minimal_text, no_content_elements" anti-bot false-positive on `application/pdf` content. Pair with [Firecrawl](../firecrawl) (or [Docling](../docling) for ingestion-time PDF parsing) if you need PDF support — Nova OS's `RoutingFetcher` automatically routes `*.pdf` URLs to Firecrawl when both are configured.
+crawl4ai returns HTTP 500 with a "minimal_text, no_content_elements" anti-bot false-positive on `application/pdf` content. Pair with [Firecrawl](../firecrawl) (or [Docling](../docling) for ingestion-time PDF parsing) if you need PDF support — Libra OS's `RoutingFetcher` automatically routes `*.pdf` URLs to Firecrawl when both are configured.

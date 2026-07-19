@@ -1,8 +1,8 @@
 # AG-UI — agent ↔ UI streaming protocol
 
-Nova OS speaks [AG-UI 1.0.0](https://docs.ag-ui.com/concepts/events) as an opt-in alternative streaming shape on the chat endpoint. This page documents how to point an AG-UI-compatible client (the most common being [CopilotKit](https://www.copilotkit.ai)) at a running Nova OS.
+Libra OS speaks [AG-UI 1.0.0](https://docs.ag-ui.com/concepts/events) as an opt-in alternative streaming shape on the chat endpoint. This page documents how to point an AG-UI-compatible client (the most common being [CopilotKit](https://www.copilotkit.ai)) at a running Libra OS.
 
-> **Adopted via [issue #370](https://github.com/MeganovaAI/nova-os/issues/370).** AG-UI is the standardised wire format; CopilotKit is the React SDK most commonly used to consume it. Nova OS picked AG-UI to avoid inventing a custom event format when an industry standard already exists.
+> **Adopted via [issue #370](https://github.com/MeganovaAI/nova-os/issues/370).** AG-UI is the standardised wire format; CopilotKit is the React SDK most commonly used to consume it. Libra OS picked AG-UI to avoid inventing a custom event format when an industry standard already exists.
 
 ## When to use AG-UI vs LibreChat
 
@@ -13,11 +13,11 @@ Nova OS speaks [AG-UI 1.0.0](https://docs.ag-ui.com/concepts/events) as an opt-i
 | Building a custom branded UI from scratch | CopilotKit + AG-UI (or any AG-UI client) |
 | Backend agent-to-agent integration | Don't need either — use `/v1/chat/completions` directly |
 
-LibreChat consumes Nova OS's OpenAI-compatible `/v1/chat/completions`. CopilotKit consumes the AG-UI shape on `/agents/v1/:api_key/chat`. They're parallel paths, both supported permanently.
+LibreChat consumes Libra OS's OpenAI-compatible `/v1/chat/completions`. CopilotKit consumes the AG-UI shape on `/agents/v1/:api_key/chat`. They're parallel paths, both supported permanently.
 
 ## Opting into AG-UI on the wire
 
-The Nova OS chat endpoint defaults to a backward-compatible shape (the [issue #99](https://github.com/MeganovaAI/nova-os/issues/99) event format). To get AG-UI 1.0.0 events instead, the client must opt in **per request**, either via header or request body:
+The Libra OS chat endpoint defaults to a backward-compatible shape (the [issue #99](https://github.com/MeganovaAI/nova-os/issues/99) event format). To get AG-UI 1.0.0 events instead, the client must opt in **per request**, either via header or request body:
 
 **Header form (preferred):**
 ```http
@@ -40,7 +40,7 @@ Either opts the response into the AG-UI shape. The server adds `X-AG-UI-Version:
 
 ## Event shapes
 
-Per the [AG-UI spec](https://docs.ag-ui.com/concepts/events), every SSE event is a JSON object with a `type` field plus event-specific payload. Nova OS emits these event types:
+Per the [AG-UI spec](https://docs.ag-ui.com/concepts/events), every SSE event is a JSON object with a `type` field plus event-specific payload. Libra OS emits these event types:
 
 **Lifecycle:** `RUN_STARTED` (`threadId`, `runId`) → ... → `RUN_FINISHED` (`outcome.type: "success"`) or `RUN_ERROR` (`message`, `code`).
 
@@ -50,7 +50,7 @@ Per the [AG-UI spec](https://docs.ag-ui.com/concepts/events), every SSE event is
 
 **Tool calls:** `TOOL_CALL_START` (`toolCallId`, `toolCallName`) → `TOOL_CALL_ARGS` (`toolCallId`, `delta` as serialized JSON chunk) × N → `TOOL_CALL_END` (`toolCallId`) → `TOOL_CALL_RESULT` (`toolCallId`, `content`).
 
-Wire field names use camelCase to match the AG-UI spec verbatim. Nova OS internals stay snake_case and translate at the emission boundary.
+Wire field names use camelCase to match the AG-UI spec verbatim. Libra OS internals stay snake_case and translate at the emission boundary.
 
 ## CopilotKit integration recipe
 
@@ -62,7 +62,7 @@ CopilotKit ships React hooks + pre-built UI components that consume AG-UI. You'l
 npm install @copilotkit/react-core @copilotkit/react-ui
 ```
 
-### Wire to Nova OS
+### Wire to Libra OS
 
 ```tsx
 // app/copilot-provider.tsx
@@ -82,7 +82,7 @@ export function ChatPanel() {
     >
       <CopilotChat
         labels={{
-          title: "Nova OS",
+          title: "Libra OS",
           initial: "How can I help?",
         }}
       />
@@ -105,7 +105,7 @@ For authenticated chats (`NOVA_OS_AUTH_ENABLED=true`, the default), pass a JWT b
 >
 ```
 
-The JWT comes from either Nova OS's OIDC provider (`/oauth/authorize` → `/oauth/token`) or from the dashboard login (`POST /api/auth/login` → `access_token`). See `docs/oidc-setup.md` for the OIDC route.
+The JWT comes from either Libra OS's OIDC provider (`/oauth/authorize` → `/oauth/token`) or from the dashboard login (`POST /api/auth/login` → `access_token`). See `docs/oidc-setup.md` for the OIDC route.
 
 ### Pointing at a specific agent
 
@@ -123,17 +123,17 @@ From the browser devtools network tab while CopilotKit is streaming:
 - Response header `X-AG-UI-Version: 1.0.0` is present
 - Response body is `text/event-stream` with `data: {"type":"RUN_STARTED",...}` lines
 
-If you see `data: {"type":"content",...}` or `data: {"type":"pipeline_start",...}` instead, the request did NOT opt into AG-UI — Nova OS fell back to the default shim shape. Double-check the header / body field.
+If you see `data: {"type":"content",...}` or `data: {"type":"pipeline_start",...}` instead, the request did NOT opt into AG-UI — Libra OS fell back to the default shim shape. Double-check the header / body field.
 
 ## Spec versioning
 
-The `X-AG-UI-Version` response header (`1.0.0`) lets clients pin to a known shape. Upstream AG-UI spec changes that rename event types (the early-2026 `THINKING_*` → `REASONING_*` rename was one such) bump the version; Nova OS pins per-release and updates in lockstep with its [release notes](https://docs.meganova.ai/nova-os/releases).
+The `X-AG-UI-Version` response header (`1.0.0`) lets clients pin to a known shape. Upstream AG-UI spec changes that rename event types (the early-2026 `THINKING_*` → `REASONING_*` rename was one such) bump the version; Libra OS pins per-release and updates in lockstep with its [release notes](https://docs.meganova.ai/nova-os/releases).
 
 ## Cross-references
 
 - **AG-UI spec:** <https://docs.ag-ui.com/concepts/events>
 - **CopilotKit:** <https://www.copilotkit.ai> + <https://github.com/CopilotKit/CopilotKit>
-- **Nova OS adoption issue:** [MeganovaAI/nova-os#370](https://github.com/MeganovaAI/nova-os/issues/370)
+- **Libra OS adoption issue:** [MeganovaAI/nova-os#370](https://github.com/MeganovaAI/nova-os/issues/370)
 - **Backward-compat event shape** (the default when AG-UI not requested): [MeganovaAI/nova-os#99](https://github.com/MeganovaAI/nova-os/issues/99)
 - **For a working chat UI without writing React:** see [`apps/librechat/`](../apps/librechat/) — it consumes the OpenAI-compatible endpoint, not AG-UI, but it's one `docker compose up` away.
 

@@ -9,10 +9,10 @@
 # Layer on top of the root compose:
 #   docker compose -f docker-compose.yml -f apps/docling/docker-compose.yaml up -d
 #
-# Then set in the root .env (and re-up Nova OS):
+# Then set in the root .env (and re-up Libra OS):
 #   DOCLING_URL=http://docling:5001
 #
-# Nova OS will auto-select RoutingParser{PDF: Docling, DOCX: Docling, HTML: Native}
+# Libra OS will auto-select RoutingParser{PDF: Docling, DOCX: Docling, HTML: Native}
 # when DOCLING_URL is set. Force Docling for everything via NOVA_OS_PARSER=docling.
 #
 # GPU acceleration: uncomment the `deploy` block below and ensure the NVIDIA

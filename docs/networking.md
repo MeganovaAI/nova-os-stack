@@ -9,8 +9,8 @@ The root `docker-compose.yml` creates a single user-defined bridge network named
 Every companion app under `apps/` declares the same network as `external: true`. This means:
 
 1. The root compose must come up **first** — it creates the network. Run `docker compose -f docker-compose.yml up -d` before any companion-app overlay.
-2. Companion apps can reach each other and Nova OS by service name. From inside a container:
-   - `http://nova-os:8900` — Nova OS API
+2. Companion apps can reach each other and Libra OS by service name. From inside a container:
+   - `http://nova-os:8900` — Libra OS API
    - `http://searxng:8080` — SearXNG (when running)
    - `http://crawl4ai:11235` — crawl4ai
    - `http://docling:5001` — Docling
@@ -19,7 +19,7 @@ Every companion app under `apps/` declares the same network as `external: true`.
 
 | Service | Container port | Host port | Override env |
 |---|---|---|---|
-| Nova OS | 8900 | 8900 | `NOVA_OS_PORT` |
+| Libra OS | 8900 | 8900 | `NOVA_OS_PORT` |
 | LibreChat | 3080 | 3080 | `LIBRECHAT_PORT` |
 | SearXNG | 8080 | 8888 | `SEARXNG_PORT` |
 | crawl4ai | 11235 | 11235 | `CRAWL4AI_PORT` |
@@ -27,12 +27,12 @@ Every companion app under `apps/` declares the same network as `external: true`.
 
 Postgres, SurrealDB, MongoDB (LibreChat) are **not** published to the host. They stay on `nova-net`.
 
-## Reverse-proxy in front of Nova OS
+## Reverse-proxy in front of Libra OS
 
-Most production deploys put nginx, Caddy, or Traefik in front of Nova OS to terminate TLS and route subpaths. Two key requirements:
+Most production deploys put nginx, Caddy, or Traefik in front of Libra OS to terminate TLS and route subpaths. Two key requirements:
 
 1. **`NOVA_OS_PUBLIC_URL` must match the user-facing URL** (e.g. `https://nova-os.your-company.example`). It's used as the OIDC issuer claim — mismatches break SSO into LibreChat or any other OIDC client.
-2. **Server-Sent Events**: Nova OS streams chat completions over SSE. Disable proxy buffering on streaming endpoints. For nginx:
+2. **Server-Sent Events**: Libra OS streams chat completions over SSE. Disable proxy buffering on streaming endpoints. For nginx:
 
    ```nginx
    location /v1/ {
@@ -51,7 +51,7 @@ A complete nginx + Caddy + Traefik example lives in the [Install guide](https://
 
 ## Joining an existing Docker network
 
-If you already have a `traefik-net` or similar, attach Nova OS to it as well by editing the root compose:
+If you already have a `traefik-net` or similar, attach Libra OS to it as well by editing the root compose:
 
 ```yaml
 services:

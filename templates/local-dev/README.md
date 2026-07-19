@@ -1,6 +1,6 @@
 # Local Dev Template
 
-Minimal docker-compose for running Nova OS + LibreChat on a single host with
+Minimal docker-compose for running Libra OS + LibreChat on a single host with
 plain HTTP. Intended for developer laptops and demo boxes where the operator
 is the only user and TLS isn't required.
 
@@ -33,8 +33,8 @@ prints which check failed and a one-line fix.
 ## URLs
 
 - LibreChat UI: `http://localhost:3080`
-- Nova OS dashboard: `http://localhost:8900/admin/`
-- Nova OS API: `http://localhost:8900/v1/`
+- Libra OS dashboard: `http://localhost:8900/admin/`
+- Libra OS API: `http://localhost:8900/v1/`
 
 ## Teardown
 
@@ -50,7 +50,7 @@ If `verify.sh` reports a FAIL line, the doctor command also prints a
 Common issues on first run:
 
 - **OIDC strategy fails to register in LibreChat** — `verify.sh` won't catch
-  this directly, but the symptom is "Sign in with Nova OS" returning
+  this directly, but the symptom is "Sign in with Libra OS" returning
   `ERR_CONNECTION_REFUSED`. Cause: `NOVA_OS_PUBLIC_URL` must be reachable
   from the LibreChat container AND from your browser. For this template,
   `host.docker.internal:8900` works from inside Docker but not from a

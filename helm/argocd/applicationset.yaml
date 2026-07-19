@@ -1,4 +1,4 @@
-# ArgoCD ApplicationSet — one Nova OS Application per file in helm/tenants/.
+# ArgoCD ApplicationSet — one Libra OS Application per file in helm/tenants/.
 #
 # This is the "onboarding a tenant = one values file" payoff: drop
 # helm/tenants/<tenant>.yaml, and Argo renders the nova-os chart with that file
@@ -15,7 +15,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/MeganovaAI/nova-os-stack.git
+        repoURL: https://github.com/libraos/stack.git
         revision: main
         files:
           # [a-z]* excludes the underscore-prefixed _example.yaml template.
@@ -27,7 +27,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/MeganovaAI/nova-os-stack.git
+        repoURL: https://github.com/libraos/stack.git
         targetRevision: main
         path: helm/nova-os
         helm:

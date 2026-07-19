@@ -1,6 +1,6 @@
 # Single-Host Prod Template
 
-Production-grade deployment of Nova OS + LibreChat on a single host
+Production-grade deployment of Libra OS + LibreChat on a single host
 behind an nginx reverse proxy with TLS termination. Suitable for
 small-to-mid partner tenants where one host serves all traffic and
 the operator manages their own certs.
@@ -75,9 +75,9 @@ docker compose up -d
 ## URLs after setup
 
 - LibreChat UI: `https://nova.partner.com/chat/`
-- Nova OS dashboard: `https://nova.partner.com/admin/`
-- Nova OS OIDC discovery: `https://nova.partner.com/.well-known/openid-configuration`
-- Nova OS API (partner SDK): `https://nova.partner.com/v1/`
+- Libra OS dashboard: `https://nova.partner.com/admin/`
+- Libra OS OIDC discovery: `https://nova.partner.com/.well-known/openid-configuration`
+- Libra OS API (partner SDK): `https://nova.partner.com/v1/`
 
 ## verify.sh
 

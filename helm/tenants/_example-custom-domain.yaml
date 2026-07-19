@@ -2,7 +2,7 @@
 # fleet's <tenant>.meganova.app subdomain.
 #
 # The domain split this supports:
-#   - Nova OS product surfaces (playground, demos)  → *.meganova.app (fleet default)
+#   - Libra OS product surfaces (playground, demos)  → *.meganova.app (fleet default)
 #   - Partner tenants (their product, their users)  → the partner's domain (this file)
 #   - Gateway / API                                 → api.meganova.ai (not served here)
 #

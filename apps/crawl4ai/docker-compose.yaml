@@ -5,7 +5,7 @@
 # Layer on top of the root compose:
 #   docker compose -f docker-compose.yml -f apps/crawl4ai/docker-compose.yaml up -d
 #
-# Then set in the root .env (and re-up Nova OS):
+# Then set in the root .env (and re-up Libra OS):
 #   CRAWL4AI_URL=http://crawl4ai:11235
 
 services:
